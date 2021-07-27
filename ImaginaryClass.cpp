@@ -37,45 +37,46 @@ namespace D {
 /*----------------------------------------------------------------------*/
 /*----------------------- CONSTRUCTOR/DESTRUCTOR -----------------------*/
 /*----------------------------------------------------------------------*/
-ImaginaryClass::ImaginaryClass(){
+ImaginaryClass::ImaginaryClass(OTHERCLASS* pointer) : 
+    DefinitelyRealSuper(),
     //ints
     //Unsigned Ints
-    myUnsignedInt  = 0;
+    myUnsignedInt(0),
     //Volatile Ints
-    myInt  = 0;
+    myInt(0),
     //Shorts
-    myShort  = 0;
-    myShortArray[20];
+    myShort(0),
+    myShortArray({0}),
     //Unsigned Shorts
-    myUnsignedShort  = 0;
+    myUnsignedShort(0),
     //Volatile Shorts
     //Longs
-    myLong  = 0;
+    myLong(0),
     //Unsigned Longs
-    myUnsignedLong  = 0;
+    myUnsignedLong(0),
     //Volatile Longs
     //Long Longs
     //Unsigned Long Longs
     //Ulongs
-    myULong  = 0;
+    myULong(0),
     //Chars
-    myChar  = '';
-    myCharArray[20];
+    myChar('\0'),
+    myCharArray({'\0'}),
     //Unsigned Chars
-    myUnsignedChar  = '';
+    myUnsignedChar(0),
     //Strings
-    myString  = "";
+    myString(""),
     //Floats
-    myFloat  = 0.0;
+    myFloat(0.0),
     //Doubles
-    myDouble  = 0.0;
+    myDouble(0.0),
     //bools
-    myBool  = false;
-    myBoolArray[20];
+    myBool(false),
+    myBoolArray({false}),
     //unsigned
-    myUnsigned  = 0;
-    myUnsignedArray[20];
-    myPointer = NULL;
+    myUnsigned(0),
+    myUnsignedArray({0}),
+    myPointer(NULL),
 }
 
 

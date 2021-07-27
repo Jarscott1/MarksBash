@@ -117,13 +117,26 @@ cat >> $OUTPUT_FILE << EOF
 /*----------------------------------------------------------------------*/
 EOF
 
-echo "$CLASS_NAME::$CLASS_NAME(){" >> $OUTPUT_FILE
+CONSTRUCTOR_PARAMS=$( grep $CLASS_NAME $1 | grep "(" | grep -v "~" | grep -v "delete" | cut -d "(" -f 2 | cut -d ")" -f 1 | tr -d "\n" )
+INHERITED_NAME=$( grep $CLASS_NAME $1 | grep -w "class" | grep -v "\/\/\|\/\*"| sed "s/::/ /g" | cut -d ":" -f 2 | rev | cut -d " " -f 1 | rev | tr -d "\n" | tr -d "\r" )
+for i in "${INHERITED_NAME[@]}"
+do
+    if [[ $i = "" ]]
+    then
+        :
+    else
+        echo "$i"
+    fi
+done
+
+echo "$CLASS_NAME::$CLASS_NAME($CONSTRUCTOR_PARAMS) : " >> $OUTPUT_FILE
+echo "    $INHERITED_NAME()," >> $OUTPUT_FILE
 echo "***********************CONSTRUCTOR******************************"
 #Find Ints
 echo "--------------INTS----------------"
-INT_VARIABLES=($(grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+INT_VARIABLES=($(grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
-INT_ARRAYS=($(grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+INT_ARRAYS=($(grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 grep -w "int" $1 | sed "s/  //g" | grep "\[" | grep -v 'volatile\|unsigned\|typedef' | cut -d " " -f 2
 echo "    //ints" >> $OUTPUT_FILE
 echo "Int array size: ${#INT_VARIABLES[@]}"
@@ -133,7 +146,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${INT_ARRAYS[@]}"
@@ -142,16 +155,16 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
 
 #Find Unsigned Ints
 echo "    //Unsigned Ints" >> $OUTPUT_FILE
 echo "----------UNSIGNED INTS-----------"
-UNSIGNED_INT_VARIABLES=$(grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+UNSIGNED_INT_VARIABLES=$(grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
-UNSIGNED_INT_ARRAYS=($(grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r"))
+UNSIGNED_INT_ARRAYS=($(grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r"))
 grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3
 for i in "${UNSIGNED_INT_VARIABLES[@]}"
 do
@@ -159,7 +172,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${UNSIGNED_INT_ARRAYS[@]}"
@@ -168,15 +181,15 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
 #Find Volatile Ints
 echo "    //Volatile Ints" >> $OUTPUT_FILE
 echo "----------VOLATILE INTS-----------"
-VOLATILE_INT_VARIABLES=$(grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+VOLATILE_INT_VARIABLES=$(grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
-VOLATILE_INT_ARRAYS=$(grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+VOLATILE_INT_ARRAYS=$(grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3
 for i in "${VOLATILE_INT_VARIABLES[@]}"
 do
@@ -184,7 +197,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${VOLATILE_INT_ARRAYS[@]}"
@@ -193,15 +206,15 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 #Find Shorts
 echo "    //Shorts" >> $OUTPUT_FILE
 echo "--------------SHORTS--------------"
-SHORT_VARIABLES=$(grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+SHORT_VARIABLES=$(grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef'  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
-SHORT_ARRAYS=($(grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+SHORT_ARRAYS=($(grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 grep -w "short" $1 | sed "s/  //g" | grep "\[" | cut -d " " -f 2
 for i in "${SHORT_VARIABLES[@]}"
 do
@@ -209,7 +222,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${SHORT_ARRAYS[@]}"
@@ -218,15 +231,15 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
 #Find Unsigned Shorts
 echo "    //Unsigned Shorts" >> $OUTPUT_FILE
 echo "---------UNSIGNED SHORTS----------"
-UNSIGNED_SHORT_VARIABLES=$(grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+UNSIGNED_SHORT_VARIABLES=$(grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
-UNSIGNED_SHORT_ARRAYS=$(grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+UNSIGNED_SHORT_ARRAYS=$(grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" )
 grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 
 for i in "${UNSIGNED_SHORT_VARIABLES[@]}"
 do
@@ -234,7 +247,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${UNSIGNED_SHORT_ARRAYS[@]}"
@@ -243,13 +256,13 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
 #Find Volatile Shorts
 echo "    //Volatile Shorts" >> $OUTPUT_FILE
 echo "---------VOLATILE SHORTS----------"
-VOLATILE_SHORT_VARIABLES=$(grep -w "volatile short" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+VOLATILE_SHORT_VARIABLES=$(grep -w "volatile short" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "volatile short" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
 for i in "${VOLATILE_SHORT_VARIABLES[@]}"
 do
@@ -257,13 +270,13 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 #Find Longs
 echo "    //Longs" >> $OUTPUT_FILE
 echo "--------------LONGS---------------"
-LONG_VARIABLES=$(grep -w "long" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+LONG_VARIABLES=$(grep -w "long" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "long" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long"  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
 for i in "${LONG_VARIABLES[@]}"
 do
@@ -271,13 +284,13 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 #Find Unsigned Longs (Ulongs)
 echo "    //Unsigned Longs" >> $OUTPUT_FILE
 echo "----------UNSIGNED LONGS----------"
-UNSIGNED_LONG_VARIABLES=$(grep -w "unsigned long" $1 | grep -v 'volatile\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+UNSIGNED_LONG_VARIABLES=$(grep -w "unsigned long" $1 | grep -v 'volatile\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "unsigned long" $1 | grep -v 'volatile\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
 for i in "${UNSIGNED_LONG_VARIABLES[@]}"
 do
@@ -285,13 +298,13 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 #Find Volatile Longs
 echo "    //Volatile Longs" >> $OUTPUT_FILE
 echo "----------VOLATILE LONGS----------"
-VOLATILE_LONG_VARIABLES=$(grep -w "volatile long" $1 | grep -v 'typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+VOLATILE_LONG_VARIABLES=$(grep -w "volatile long" $1 | grep -v 'typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "volatile long" $1 | grep -v 'typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
 for i in "${VOLATILE_LONG_VARIABLES[@]}"
 do
@@ -299,13 +312,13 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 #Find Long Longs
 echo "    //Long Longs" >> $OUTPUT_FILE
 echo "-----------LONG LONGS-------------"
-LONG_LONG_VARIABLES=$(grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+LONG_LONG_VARIABLES=$(grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
 for i in "${LONG_LONG_VARIABLES[@]}"
 do
@@ -313,13 +326,13 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 #Find Unsigned Long Longs
 echo "    //Unsigned Long Longs" >> $OUTPUT_FILE
 echo "-------UNSIGNED LONG LONGS--------"
-UNSIGNED_LONG_LONG_VARIABLES=$(grep -w "unsigned long long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 4 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+UNSIGNED_LONG_LONG_VARIABLES=$(grep -w "unsigned long long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 4 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "unsigned long long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 4 | sed "s/;/ = 0;/g"
 for i in "${UNSIGNED_LONG_LONG_VARIABLES[@]}"
 do
@@ -327,13 +340,13 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 #Find Ulongs
 echo "    //Ulongs" >> $OUTPUT_FILE
 echo "-------------ULONGS---------------"
-ULONG_VARIABLES=$(grep -w "ulong" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+ULONG_VARIABLES=$(grep -w "ulong" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "ulong" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long"  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
 for i in "${ULONG_VARIABLES[@]}"
 do
@@ -341,15 +354,15 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 #Find Chars
 echo "    //Chars" >> $OUTPUT_FILE
 echo "--------------CHARS---------------"
-CHAR_VARIABLES=$(grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+CHAR_VARIABLES=$(grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef'  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = \'\';/g"
-CHAR_ARRAYS=($(grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r"))
+CHAR_ARRAYS=($(grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r"))
 grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' |sed "s/  //g" | grep "\[" | cut -d " " -f 2
 for i in "${CHAR_VARIABLES[@]}"
 do
@@ -357,7 +370,7 @@ do
     then
         :
     else
-        echo "    $i = '';" >> $OUTPUT_FILE 
+        echo "    $i('\0')," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${CHAR_ARRAYS[@]}"
@@ -366,38 +379,38 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({'\0'})," >> $OUTPUT_FILE 
     fi
 done
 #Find Unsigned Chars
 echo "    //Unsigned Chars" >> $OUTPUT_FILE
 echo "----------UNSIGNED CHARS----------"
-CHAR_VARIABLES=$(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+UNSIGNED_CHAR_VARIABLES=$(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "unsigned char" $1 | grep -v 'volatile\|typedef'  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = \'\';/g"
-CHAR_ARRAYS=($(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_CHAR_ARRAYS=($(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' |sed "s/  //g" | grep "\[" | cut -d " " -f 3
-for i in "${CHAR_VARIABLES[@]}"
+for i in "${UNSIGNED_CHAR_VARIABLES[@]}"
 do
     if [[ $i = "" ]]
     then
         :
     else
-        echo "    $i = '';" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
-for i in "${CHAR_ARRAYS[@]}"
+for i in "${UNSIGNED_CHAR_ARRAYS[@]}"
 do
     if [[ $i = "" ]]
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi
 done
 #Find Strings
 echo "    //Strings" >> $OUTPUT_FILE
 echo "-------------STRINGS--------------"
-STRING_VARIABLES=$(grep -w "string" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+STRING_VARIABLES=$(grep -w "string" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "string" $1 | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = \"\";/g"
 for i in "${STRING_VARIABLES[@]}"
 do
@@ -405,13 +418,13 @@ do
     then
         :
     else
-        echo "    $i = \"\";" >> $OUTPUT_FILE 
+        echo "    $i(\"\")," >> $OUTPUT_FILE 
     fi 
 done
 #Find Floats
 echo "    //Floats" >> $OUTPUT_FILE
 echo "--------------FLOATS--------------"
-FLOAT_VARIABLES=$(grep -w "float" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+FLOAT_VARIABLES=$(grep -w "float" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "float" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0.0;/g"
 for i in "${FLOAT_VARIABLES[@]}"
 do
@@ -419,13 +432,13 @@ do
     then
         :
     else
-        echo "    $i = 0.0;" >> $OUTPUT_FILE 
+        echo "    $i(0.0)," >> $OUTPUT_FILE 
     fi
 done
 #Find Doubles
 echo "    //Doubles" >> $OUTPUT_FILE
 echo "-------------DOUBLES--------------"
-DOUBLE_VARIABLES=$(grep -w "double" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+DOUBLE_VARIABLES=$(grep -w "double" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 grep -w "double" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0.0;/g"
 for i in "${DOUBLE_VARIABLES[@]}"
 do
@@ -433,14 +446,14 @@ do
     then
         :
     else
-        echo "    $i = 0.0;" >> $OUTPUT_FILE 
+        echo "    $i(0.0)," >> $OUTPUT_FILE 
     fi 
 done
 #Find Bools
 echo "--------------BOOLS---------------"
-BOOL_VARIABLES=$(grep "bool" $1 | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ) 
+BOOL_VARIABLES=$(grep "bool" $1 | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ) 
 grep "bool" $1 | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = false;/g"
-BOOL_ARRAYS=($(grep "bool" $1 | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+BOOL_ARRAYS=($(grep "bool" $1 | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 grep "bool" $1 | sed "s/  //g" | grep "\[" | cut -d " " -f 2
 BOOL_FUNCTIONS=($(grep "bool" $1 | sed "s/  //g" | grep "(" | grep -v "{" | sed "s/;//g" | cut -d ";" -f 1- ))
 
@@ -451,7 +464,7 @@ do
     then
         :
     else
-        echo "    $i = false;" >> $OUTPUT_FILE 
+        echo "    $i(false)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${BOOL_ARRAYS[@]}"
@@ -460,14 +473,14 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({false})," >> $OUTPUT_FILE 
     fi
 done
 #Find Unsigneds
 echo "-----------UNSIGNEDS--------------"
-UNSIGNED_VARIABLES=$(grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ) 
+UNSIGNED_VARIABLES=$(grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ) 
 grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
-UNSIGNED_ARRAYS=($(grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_ARRAYS=($(grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 2 
 echo "    //unsigned" >> $OUTPUT_FILE
 echo "Unsigned Array Size: ${#UNSIGNED_VARIABLES[@]}"
@@ -477,7 +490,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${UNSIGNED_ARRAYS[@]}"
@@ -486,12 +499,12 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi
 done
 
 echo "-------------POINTERS--------------"
-POINTER_VARIABLES=($(grep -E "[A-Za-z]\*" $1 | grep -v "typedef" | sed "s/  //g" | grep -v "(" | grep -v "\[" | rev | cut -d " " -f 1 | rev | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+POINTER_VARIABLES=($(grep -E "[A-Za-z]\*" $1 | grep -v "typedef" | sed "s/  //g" | grep -v "(" | grep -v "\[" | rev | cut -d " " -f 1 | rev | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 grep -E "[A-Za-z]\*" $1 | grep -v "typedef" | sed "s/  //g" | grep -v "(" | grep -v "\[" | rev | cut -d " " -f 1 | rev | sed "s/;/ = NULL;/g" 
 echo "Array Length Size: ${#POINTER_VARIABLES[@]}"
 for i in "${POINTER_VARIABLES[@]}"
@@ -500,7 +513,7 @@ do
     then
         :
     else
-        echo "    $i = NULL;" >> $OUTPUT_FILE 
+        echo "    $i(NULL)," >> $OUTPUT_FILE 
     fi
 done
 echo "-------------TYPEDEFS--------------"
@@ -578,7 +591,7 @@ do
     then
         :
     else
-        echo "$i" >> $OUTPUT_FILE
+        echo $i >> $OUTPUT_FILE
     fi 
 done
 
