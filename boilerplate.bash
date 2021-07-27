@@ -1,6 +1,7 @@
 #!/bin/bash
 
-####BOILERPLATE.BASH####
+#### BOILERPLATE.BASH ####
+#### By Jake Arscott ####
 ## This Bash Script creates an automatic boilerplate for files. ##
 
 INPUT_FILE="$1"
