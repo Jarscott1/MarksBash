@@ -567,7 +567,7 @@ EOF
 #This grep will be saved in a variable and will later be printed out to a file.
 #FUNCTIONS_LIST=$(grep -E '\(.*\)' $1 | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/  //g" |  )
 FUNCTIONS_LIST=$(grep -wE ".*\(.*\)" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/;/ {}\n\n\n$BUFFERLINE\n$BUFFERLINE/g" )
-#FUNCTIONS_LIST=$(grep -w "int" $1 | sed "s/  //g" )
+FUNCTION_NAMES=($(grep -wE ".*\(.*\)" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/unsigned //g" | sed "s/const //g" | sed "s/(/ (/g" | cut -d " " -f 2 | tr "\n" " " | tr -d "\r" ))
 #This grep is printing out to the terminal
 grep "(" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" 
 #Print out the functions to the new file.
@@ -581,6 +581,25 @@ do
         echo "$i" >> $OUTPUT_FILE
     fi 
 done
+
+for i in "${FUNCTION_NAMES[@]}"
+do
+    if [[ $i = "" ]]
+    then 
+        :
+    else
+        echo "$i"
+        cat >> $OUTPUT_FILE << EOF
+/****************************************************
+* Function: $i
+* Type: 
+* Purpose: 
+****************************************************/
+
+EOF
+    fi
+done
+
 
 cat >> $OUTPUT_FILE << EOF
 
