@@ -372,11 +372,11 @@ done
 #Find Unsigned Chars
 echo "    //Unsigned Chars" >> $OUTPUT_FILE
 echo "----------UNSIGNED CHARS----------"
-CHAR_VARIABLES=$(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+UNSIGNED_CHAR_VARIABLES=$(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
 grep -w "unsigned char" $1 | grep -v 'volatile\|typedef'  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = \'\';/g"
-CHAR_ARRAYS=($(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_CHAR_ARRAYS=($(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
 grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' |sed "s/  //g" | grep "\[" | cut -d " " -f 3
-for i in "${CHAR_VARIABLES[@]}"
+for i in "${UNSIGNED_CHAR_VARIABLES[@]}"
 do
     if [[ $i = "" ]]
     then
@@ -385,7 +385,7 @@ do
         echo "    $i = '';" >> $OUTPUT_FILE 
     fi 
 done
-for i in "${CHAR_ARRAYS[@]}"
+for i in "${UNSIGNED_CHAR_ARRAYS[@]}"
 do
     if [[ $i = "" ]]
     then
