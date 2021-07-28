@@ -40,6 +40,7 @@ class A::B::C::D::ImaginaryClass : protected A::B::C::D::DefinitelyRealSuper
     } SomeNonsenseStructWhyIsItEvenHere;
 
     bool myBool;
+    int myInt;
     char myChar;
     short myShort;
     unsigned myUnsigned;
@@ -47,19 +48,26 @@ class A::B::C::D::ImaginaryClass : protected A::B::C::D::DefinitelyRealSuper
     unsigned short myUnsignedShort;
     unsigned int myUnsignedInt;
     unsigned long myUnsignedLong;
-    volatile int myInt;
+    volatile int myVolatileInt;
     float myFloat;
     double myDouble;
     ulong myULong;
     long myLong;
+    long long myLongLong;
+    unsigned long long myUnsignedLongLong;
     std::string myString;
     OTHERCLASS myObject;
     OTHERCLASS* myPointer;
     OTHERCLASS& myReference;
+    int myIntArray[20];
     bool myBoolArray[20];
     char myCharArray[20];
     short myShortArray[20];
     unsigned myUnsignedArray[20];
+    long myLongArray[20];
+    double myDoubleArray[20];
+    float myFloatArray[20];
+    std::string myStringArray[20];
     //in my case I had a list of 60ish variables, of all different types
 
     ImaginaryClass(OTHERCLASS* pointer);

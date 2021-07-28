@@ -39,41 +39,49 @@ namespace D {
 /*----------------------------------------------------------------------*/
 ImaginaryClass::ImaginaryClass (OTHERCLASS* pointer) : DefinitelyRealSuper ();
     //ints
+    myInt = 0;
+    myIntArray[20];
     //Unsigned Ints
-    myUnsignedInt  = 0;
+    myUnsignedInt = 0;
     //Volatile Ints
-    myInt  = 0;
+    myVolatileInt = 0;
     //Shorts
-    myShort  = 0;
+    myShort = 0;
     myShortArray[20];
     //Unsigned Shorts
-    myUnsignedShort  = 0;
+    myUnsignedShort = 0;
     //Volatile Shorts
     //Longs
-    myLong  = 0;
+    myLong = 0;
+    myLongArray[20];
     //Unsigned Longs
-    myUnsignedLong  = 0;
+    myUnsignedLong = 0;
     //Volatile Longs
     //Long Longs
+    myLongLong= 0;
     //Unsigned Long Longs
+    myUnsignedLongLong = 0;
     //Ulongs
-    myULong  = 0;
+    myULong = 0;
     //Chars
-    myChar  = '';
+    myChar = '\0';
     myCharArray[20];
     //Unsigned Chars
-    myUnsignedChar  = '';
+    myUnsignedChar = '\0';
     //Strings
-    myString  = "";
+    myString = "";
+    myStringArray[20];
     //Floats
-    myFloat  = 0.0;
+    myFloat = 0.0;
+    myFloatArray[20];
     //Doubles
-    myDouble  = 0.0;
+    myDouble = 0.0;
+    myDoubleArray[20];
     //bools
-    myBool  = false;
+    myBool = false;
     myBoolArray[20];
     //unsigned
-    myUnsigned  = 0;
+    myUnsigned = 0;
     myUnsignedArray[20];
     myPointer = NULL;
 }
@@ -91,50 +99,26 @@ ImaginaryClass::~ImaginaryClass () {
 /*----------------------------------------------------------------------*/
 /*------------------------------ FUNCTIONS -----------------------------*/
 /*----------------------------------------------------------------------*/
-bool changeObjectName (const std::string identifier) {}
+bool ImaginaryClass::changeObjectName (const std::string identifier) {}
 
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
-double changeObjectValue (const double& newValue, int valueWeWontUse) {}
+double ImaginaryClass::changeObjectValue (const double& newValue, int valueWeWontUse) {}
 
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
-const std::string& getObjectName () const {}
+const std::string& ImaginaryClass::getObjectName () const {}
 
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
-const double& getObjectValue () const {}
+const double& ImaginaryClass::getObjectValue () const {}
 
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
-/****************************************************
-* Function: changeObjectName
-* Type: 
-* Purpose: 
-****************************************************/
-
-/****************************************************
-* Function: changeObjectValue
-* Type: 
-* Purpose: 
-****************************************************/
-
-/****************************************************
-* Function: getObjectName
-* Type: 
-* Purpose: 
-****************************************************/
-
-/****************************************************
-* Function: getObjectValue
-* Type: 
-* Purpose: 
-****************************************************/
-
 
 
 /*----------------------------------------------------------------------*/
