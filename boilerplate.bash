@@ -3,12 +3,15 @@
 ####BOILERPLATE.BASH####
 ## This Bash Script creates an automatic boilerplate for files. ##
 
-INPUT_FILE="$1"
+RAW_INPUT_FILE="$1"
+INPUT_FILE=($(echo $1 | rev | cut -d "/" -f 1 | rev ))
 echo "Running the Boilerplate Bash Script."
-CLASS_NAME=$( echo $1 | cut -d "." -f 1 )
+CLASS_NAME=$( echo $INPUT_FILE | cut -d "." -f 1 )
 OUTPUT_FILE="$CLASS_NAME.cpp"
-echo $OUTPUT_FILE
 
+echo $1                                                                
+echo $INPUT_FILE
+echo $OUTPUT_FILE
 
 UNCLASS_SEARCH=$(grep -cw 'UNCLASSIFIED' $1)
 CLASS_SEARCH=$(grep -cw 'CLASSIFIED' $1)
@@ -48,11 +51,20 @@ EOF
 fi
 
 #Find description
-cat >> $OUTPUT_FILE << EOF
+if [[ $UNCLASS_SEARCH -eq 0 && $CLASS_SEARCH -eq 0 && $SECRET_RD_FRD -eq 0 ]]
+then 
+    cat > $OUTPUT_FILE << EOF
 /*----------------------------------------------------------------------*/
 /*----------------------------- DESCRIPTION ----------------------------*/
 /*----------------------------------------------------------------------*/
 EOF
+else 
+    cat >> $OUTPUT_FILE << EOF
+/*----------------------------------------------------------------------*/
+/*----------------------------- DESCRIPTION ----------------------------*/
+/*----------------------------------------------------------------------*/
+EOF
+fi
 
 #Find Includes
 cat >> $OUTPUT_FILE << EOF
@@ -61,9 +73,10 @@ cat >> $OUTPUT_FILE << EOF
 /*----------------------------------------------------------------------*/
 /*------------------------------ INCLUDES ------------------------------*/
 /*----------------------------------------------------------------------*/
+#include <iostream>
 EOF
 
-echo "#include \"$1\"" >> $OUTPUT_FILE
+echo "#include \"$INPUT_FILE\"" >> $OUTPUT_FILE
 
 #Find Forward Declarations
 cat >> $OUTPUT_FILE << EOF
@@ -85,19 +98,24 @@ using namespace std;
 EOF
 
 #METHOD 1: Cut result of grep search and see if we can parse it into an array
-NAMESPACE=$(grep "class" $1 | grep "$CLASS_NAME" | grep ":" | cut -d " " -f 2 | sed "s/::/ /g" | rev |cut -d " " -f 2- | rev )
+#NAMESPACE=$(grep "class" $1 | grep "$CLASS_NAME" | grep ":" | cut -d " " -f 2 | sed "s/::/ /g" | rev |cut -d " " -f 2- | rev )
 #METHOD 2: Use read to put the result into an array. Relies on METHOD 1
-IFS=' ' read -ra usings_array <<< "$NAMESPACE"
+#IFS=' ' read -ra usings_array <<< "$NAMESPACE"
 #Print out the two results:
 #Result 1
-REVERSE_NAMESPACE=$(echo $NAMESPACE | rev)
-IFS=' ' read -ra usings_array_reverse <<< "$REVERSE_NAMESPACE"
+#REVERSE_NAMESPACE=$(echo $NAMESPACE | rev)
+#IFS=' ' read -ra usings_array_reverse <<< "$REVERSE_NAMESPACE"
 #Result 2
-for i in "${usings_array[@]}"
-do
-    echo "namespace $i {" >> $OUTPUT_FILE
-done
-
+#echo "******************USINGS******************"
+#for i in "${usings_array[@]}"
+#do
+#    if [[ $i = "" ]]
+#    then
+#        :
+#    else
+#        echo "namespace $i {" >> $OUTPUT_FILE
+#    fi
+#done
 #Global Variables
 cat >> $OUTPUT_FILE << EOF
 
@@ -118,18 +136,24 @@ cat >> $OUTPUT_FILE << EOF
 EOF
 
 CONSTRUCTOR_PARAMS=$( grep $CLASS_NAME $1 | grep "(" | grep -v "~" | grep -v "delete" | cut -d "(" -f 2 | cut -d ")" -f 1 | tr -d "\n" )
-INHERITED_NAME=$( grep $CLASS_NAME $1 | grep -w "class" | grep -v "\/\/\|\/\*"| sed "s/::/ /g" | cut -d ":" -f 2 | rev | cut -d " " -f 1 | rev | tr -d "\n" | tr -d "\r" )
+INHERITED_NAME=$( grep $CLASS_NAME $1 | grep -w "class" | grep ":" | grep -v "\/\/\|\/\*"| sed "s/::/ /g" | cut -d ":" -f 2 | rev | cut -d " " -f 1 | rev | tr -d "\n" | tr -d "\r" )
 for i in "${INHERITED_NAME[@]}"
 do
     if [[ $i = "" ]]
     then
         :
     else
-        echo "$i"
+        echo "Inherited Name: $i"
     fi
 done
 
-echo "$CLASS_NAME::$CLASS_NAME ($CONSTRUCTOR_PARAMS) : $INHERITED_NAME ();" >> $OUTPUT_FILE
+if [[ $INHERITED_NAME = "" ]]
+then
+    echo "$CLASS_NAME::$CLASS_NAME ($CONSTRUCTOR_PARAMS) : $INHERITED_NAME () {" >> $OUTPUT_FILE
+else
+    echo "$CLASS_NAME::$CLASS_NAME ($CONSTRUCTOR_PARAMS) {" >> $OUTPUT_FILE
+fi
+
 echo "***********************CONSTRUCTOR******************************"
 #Find Ints
 echo "--------------INTS----------------"
@@ -678,10 +702,10 @@ EOF
 
 #This grep will be saved in a variable and will later be printed out to a file.
 #FUNCTIONS_LIST=$(grep -E '\(.*\)' $1 | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/  //g" |  )
-FUNCTIONS_LIST=$(grep -wE ".*\(.*\)" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/(/ (/g" | sed "s/  (/ (/g" | sed "s/;/ {}\n\n\n$BUFFERLINE\n$BUFFERLINE/g" )
-FUNCTION_NAMES=($(grep -wE ".*\(.*\)" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/unsigned //g" | sed "s/const //g" | sed "s/(/ (/g" | cut -d " " -f 2 | tr "\n" " " | tr -d "\r" ))
+FUNCTIONS_LIST=$(grep -wE ".*\(.*\)" $1 | grep -v "//.*\(.*\)" | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/(/ (/g" | sed "s/  (/ (/g" | sed "s/;/ {}\n\n\n$BUFFERLINE\n$BUFFERLINE/g" )
+FUNCTION_NAMES=($(grep -wE ".*\(.*\)" $1 | grep -vE "//.*\(.*\)" | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/unsigned //g" | sed "s/const //g" | sed "s/(/ (/g" | cut -d " " -f 2 | tr "\n" " " | tr -d "\r" ))
 #This grep is printing out to the terminal
-grep "(" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" 
+grep -wE ".*\(.*\)" $1 | grep -v "//.*\(.*\)" | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/(/ (/g" | sed "s/  (/ (/g" 
 #Print out the functions to the new file.
 echo "Functions List Array Size: ${#FUNCTIONS_LIST[@]}"
 for i in "${FUNCTIONS_LIST[@]}"
@@ -696,12 +720,18 @@ done
 
 for i in "${FUNCTION_NAMES[@]}"
 do
-    if [[ $i = "" ]]
+EXISTING_FORMAT=$(grep -c "$CLASS_NAME::$i" $OUTPUT_FILE)
+    if [[ $EXISTING_FORMAT -gt 0 ]]
     then
-        :
-    else
-        sed -i "s/$i/$CLASS_NAME::$i/g" $OUTPUT_FILE
-    fi 
+       :
+    else 
+        if [[ $i = "" ]]
+        then
+            :
+        else
+            sed -i "s/$i/$CLASS_NAME::$i/g" $OUTPUT_FILE
+        fi 
+    fi
 done
 
 
@@ -728,11 +758,11 @@ cat >> $OUTPUT_FILE << EOF
 /*------------------------- CLOSING NAMESPACES -------------------------*/
 /*----------------------------------------------------------------------*/
 EOF
-#FIXME
-for i in "${usings_array_reverse[@]}"
-do
-    echo "} //end namespace $i" >> $OUTPUT_FILE
-done
+
+#for i in "${usings_array_reverse[@]}"
+#do
+#    echo "} //end namespace $i" >> $OUTPUT_FILE
+#done
 
 
 #Footer Buffer
