@@ -96,12 +96,12 @@ bool changeObjectName (const std::string identifier) {}
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
-double changeObjectValue(const double& newValue, int valueWeWontUse) {}
+double changeObjectValue (const double& newValue, int valueWeWontUse) {}
 
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
-const std::string& getObjectName() const {}
+const std::string& getObjectName () const {}
 
 
 /*----------------------------------------------------------------------*/
