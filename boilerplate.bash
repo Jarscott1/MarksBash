@@ -130,7 +130,7 @@ do
     fi
 done
 
-echo "$CLASS_NAME::$CLASS_NAME($CONSTRUCTOR_PARAMS) : " >> $OUTPUT_FILE
+echo "$CLASS_NAME::$CLASS_NAME ($CONSTRUCTOR_PARAMS) : " >> $OUTPUT_FILE
 echo "    $INHERITED_NAME()," >> $OUTPUT_FILE
 echo "***********************CONSTRUCTOR******************************"
 #Find Ints
@@ -640,7 +640,11 @@ do
 done
 
 #Close the Bracket out.
-echo "}" >> $OUTPUT_FILE
+cat >> $OUTPUT_FILE << EOF
+{
+
+}
+EOF
 
 
 cat >> $OUTPUT_FILE << EOF
@@ -665,7 +669,9 @@ done
 ##########################################################################
 #INSERT MORE CODE HERE#
 ##########################################################################
-echo "}" >> $OUTPUT_FILE
+cat >> $OUTPUT_FILE << EOF
+}
+EOF
 cat >> $OUTPUT_FILE << EOF
 
 
@@ -679,10 +685,8 @@ cat << EOF
 EOF
 
 #This grep will be saved in a variable and will later be printed out to a file.
-#FUNCTIONS_LIST=$(grep -E '\(.*\)' $1 | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/  //g" |  )
-FUNCTIONS_LIST=$(grep -wE ".*\(.*\)" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/;/ {}\\n\\n${BUFFERLINE}\n${BUFFERLINE}/g" )
+FUNCTIONS_LIST=$(grep -wE ".*\(.*\)" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/(/ (/g" | sed "s/  (/ (/g" | sed "s/;/ {}\\n\\n${BUFFERLINE}\n${BUFFERLINE}/g" )
 FUNCTION_NAMES=($(grep -wE ".*\(.*\)" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/unsigned //g" | sed "s/const //g" | sed "s/(/ (/g" | cut -d " " -f 2 | tr "\n" " " | tr -d "\r" ))
-#FUNCTIONS_LIST=$(grep -w "int" $1 | sed "s/  //g" )
 #This grep is printing out to the terminal
 grep "(" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" 
 #Print out the functions to the new file.

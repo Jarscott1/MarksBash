@@ -37,7 +37,7 @@ namespace D {
 /*----------------------------------------------------------------------*/
 /*----------------------- CONSTRUCTOR/DESTRUCTOR -----------------------*/
 /*----------------------------------------------------------------------*/
-ImaginaryClass::ImaginaryClass(OTHERCLASS* pointer) : 
+ImaginaryClass::ImaginaryClass (OTHERCLASS* pointer) : 
     DefinitelyRealSuper(),
     //ints
     //Unsigned Ints
@@ -77,6 +77,8 @@ ImaginaryClass::ImaginaryClass(OTHERCLASS* pointer) :
     myUnsigned(0),
     myUnsignedArray({0}),
     myPointer(NULL),
+{
+
 }
 
 
@@ -96,11 +98,11 @@ bool ImaginaryClass::changeObjectName (const std::string identifier) {}
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
-double ImaginaryClass::changeObjectValue(const double& newValue, int valueWeWontUse) {}
+double ImaginaryClass::changeObjectValue (const double& newValue, int valueWeWontUse) {}
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
-const std::string& ImaginaryClass::getObjectName() const {}
+const std::string& ImaginaryClass::getObjectName () const {}
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
