@@ -117,7 +117,19 @@ cat >> $OUTPUT_FILE << EOF
 /*----------------------------------------------------------------------*/
 EOF
 
-echo "$CLASS_NAME::$CLASS_NAME(){" >> $OUTPUT_FILE
+CONSTRUCTOR_PARAMS=$( grep $CLASS_NAME $1 | grep "(" | grep -v "~" | grep -v "delete" | cut -d "(" -f 2 | cut -d ")" -f 1 | tr -d "\n" )
+INHERITED_NAME=$( grep $CLASS_NAME $1 | grep -w "class" | grep -v "\/\/\|\/\*"| sed "s/::/ /g" | cut -d ":" -f 2 | rev | cut -d " " -f 1 | rev | tr -d "\n" | tr -d "\r" )
+for i in "${INHERITED_NAME[@]}"
+do
+    if [[ $i = "" ]]
+    then
+        :
+    else
+        echo "$i"
+    fi
+done
+
+echo "$CLASS_NAME::$CLASS_NAME ($CONSTRUCTOR_PARAMS) : $INHERITED_NAME ();" >> $OUTPUT_FILE
 echo "***********************CONSTRUCTOR******************************"
 #Find Ints
 echo "--------------INTS----------------"

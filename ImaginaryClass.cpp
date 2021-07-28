@@ -37,7 +37,7 @@ namespace D {
 /*----------------------------------------------------------------------*/
 /*----------------------- CONSTRUCTOR/DESTRUCTOR -----------------------*/
 /*----------------------------------------------------------------------*/
-ImaginaryClass::ImaginaryClass(){
+ImaginaryClass::ImaginaryClass (OTHERCLASS* pointer) : DefinitelyRealSuper ();
     //ints
     //Unsigned Ints
     myUnsignedInt  = 0;
