@@ -712,15 +712,19 @@ done
 
 for i in "${FUNCTION_NAMES[@]}"
 do
-    if [[ $i = "" ]]
+EXISTING_FORMAT=$(grep -c "$CLASS_NAME::$i" $OUTPUT_FILE)
+    if [[ $EXISTING_FORMAT -gt 0 ]]
     then
-        :
-    else
-        sed -i "s/$i/$CLASS_NAME::$i/g" $OUTPUT_FILE
-    fi 
+       :
+    else 
+        if [[ $i = "" ]]
+        then
+            :
+        else
+            sed -i "s/$i/$CLASS_NAME::$i/g" $OUTPUT_FILE
+        fi 
+    fi
 done
-
-cat >> $OUTPUT_FILE << EOF
 
 
 /*----------------------------------------------------------------------*/
