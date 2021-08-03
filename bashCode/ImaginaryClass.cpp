@@ -11,6 +11,7 @@
 /*----------------------------------------------------------------------*/
 /*------------------------------ INCLUDES ------------------------------*/
 /*----------------------------------------------------------------------*/
+#include <iostream>
 #include "ImaginaryClass.h"
 
 
@@ -23,10 +24,6 @@
 /*------------------------------- USINGS -------------------------------*/
 /*----------------------------------------------------------------------*/
 using namespace std;
-namespace A {
-namespace B {
-namespace C {
-namespace D {
 
 
 /*----------------------------------------------------------------------*/
@@ -37,48 +34,47 @@ namespace D {
 /*----------------------------------------------------------------------*/
 /*----------------------- CONSTRUCTOR/DESTRUCTOR -----------------------*/
 /*----------------------------------------------------------------------*/
-ImaginaryClass::ImaginaryClass (OTHERCLASS* pointer) : 
-    DefinitelyRealSuper(),
+ImaginaryClass::ImaginaryClass (OTHERCLASS* pointer) {
     //ints
     //Unsigned Ints
-    myUnsignedInt(0),
+    myUnsignedInt = 0;
     //Volatile Ints
-    myInt(0),
+    myInt = 0;
     //Shorts
-    myShort(0),
-    myShortArray({0}),
+    myShort = 0;
+    myShortArray[20];
     //Unsigned Shorts
-    myUnsignedShort(0),
+    myUnsignedShort = 0;
     //Volatile Shorts
     //Longs
-    myLong(0),
+    myLong = 0;
     //Unsigned Longs
-    myUnsignedLong(0),
+    myUnsignedLong = 0;
     //Volatile Longs
     //Long Longs
     //Unsigned Long Longs
     //Ulongs
-    myULong(0),
+    myULong = 0;
     //Chars
-    myChar('\0'),
-    myCharArray({'\0'}),
+    myChar = '\0';
+    myCharArray[20];
     //Unsigned Chars
-    myUnsignedChar(0),
+    myUnsignedChar = '\0';
     //Strings
-    myString(""),
+    myString = "";
     //Floats
-    myFloat(0.0),
+    myFloat = 0.0;
     //Doubles
-    myDouble(0.0),
+    myDouble = 0.0;
     //bools
-    myBool(false),
-    myBoolArray({false}),
+    myBool = false;
+    myBoolArray[20];
     //unsigned
-    myUnsigned(0),
-    myUnsignedArray({0}),
-    myPointer(NULL),
-{
-
+    myUnsigned = 0;
+    myUnsignedArray[20];
+    //pointers
+    myPointer = NULL;
+    //typedef
 }
 
 
@@ -96,20 +92,25 @@ ImaginaryClass::~ImaginaryClass () {
 /*----------------------------------------------------------------------*/
 bool ImaginaryClass::changeObjectName (const std::string identifier) {}
 
+
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
 double ImaginaryClass::changeObjectValue (const double& newValue, int valueWeWontUse) {}
+
 
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
 const std::string& ImaginaryClass::getObjectName () const {}
 
+
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
 const double& ImaginaryClass::getObjectValue () const {}
 
+
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
+
 
 /*----------------------------------------------------------------------*/
 /*------------------------------ OPERATORS -----------------------------*/
@@ -126,10 +127,6 @@ const double& ImaginaryClass::getObjectValue () const {}
 /*----------------------------------------------------------------------*/
 /*------------------------- CLOSING NAMESPACES -------------------------*/
 /*----------------------------------------------------------------------*/
-} //end namespace D
-} //end namespace C
-} //end namespace B
-} //end namespace A
 
 
 /*----------------------------------------------------------------------*/
