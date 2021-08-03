@@ -404,7 +404,7 @@ done
 
 #Find Volatile Longs
 #Volatile Longs banner printed to terminal: Used for debugging
-echo "----------VOLATILE LONGS----------"
+###echo "----------VOLATILE LONGS----------"
 
 #Get Volatile Long and Volatile Long Arrays
 VOLATILE_LONG_VARIABLES=($(grep -w "volatile long" $1 | grep -v 'typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
@@ -436,7 +436,7 @@ done
 
 #Find Long Longs
 #Long Longs banner printed to terminal: Used for debugging
-echo "-----------LONG LONGS-------------"
+###echo "-----------LONG LONGS-------------"
 
 #Get Long Long and Long Long Array Variables
 LONG_LONG_VARIABLES=($(grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
@@ -445,6 +445,7 @@ LONG_LONG_ARRAYS=($(grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typede
 
 #Print Comment Line to .cpp file
 echo "    //Long Longs" >> $OUTPUT_FILE
+
 #Initialize variables for Long Long and Long Long Arrays in .cpp file
 for i in "${LONG_LONG_VARIABLES[@]}"
 do
@@ -467,7 +468,7 @@ done
 
 #Find Unsigned Long Longs
 #Unsigned long longs banner printed to terminal: Used for debugging
-echo "-------UNSIGNED LONG LONGS--------"
+###echo "-------UNSIGNED LONG LONGS--------"
 
 #Get Unsigned Long Long and Unsigned Long Long Array variables
 UNSIGNED_LONG_LONG_VARIABLES=($(grep -w "unsigned long long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 4 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
@@ -602,7 +603,7 @@ done
 #Get String and String Array Variables
 STRING_VARIABLES=($(grep -w "string" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
 STRING_ARRAYS=($(grep -w "string" $1 | grep -v 'typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r"))
-#grep -w "string" $1 | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = \"\";/g"
+###grep -w "string" $1 | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = \"\";/g"
 
 #Print Comment line to .cpp file
 echo "    //Strings" >> $OUTPUT_FILE
@@ -757,7 +758,7 @@ do
     fi
 done
 
-#Pointer Variables
+#Find Pointers
 #Pointers banner printed to terminal: Used for debugging
 ###echo "-------------POINTERS--------------"
 
@@ -896,7 +897,6 @@ done
 
 #Add operators banner
 cat >> $OUTPUT_FILE << EOF
-
 
 /*----------------------------------------------------------------------*/
 /*------------------------------ OPERATORS -----------------------------*/
