@@ -1,18 +1,36 @@
 #!/bin/bash
 
-####BOILERPLATE.BASH####
+#### BOILERPLATE.BASH ####
 ## This Bash Script creates an automatic boilerplate for files. ##
 #PARAMETERS: $1: The absolute file path
 
 RELATIVE_PATH=($(echo $1 | rev | cut -d "/" -f 1 | rev )) #Relative Path stored here
-echo "Running the Boilerplate Bash Script." 
-CLASS_NAME=$( echo $RELATIVE_PATH | cut -d "." -f 1 ) #Variable to store name of class, based on .h file
-OUTPUT_FILE="$CLASS_NAME.cpp" #The name of the file to be created.
+PATH_WITHOUT_HEADER=($(echo $1 | rev | cut -d "/" -f 2- | rev )) #Relative Path stored here
+echo "Running the Boilerplate Bash Script."
+CLASS_NAME=$( echo $RELATIVE_PATH | cut -d "." -f 1 )
+OUTPUT_FILE="$PATH_WITHOUT_HEADER/$CLASS_NAME.cpp"
+OUTPUT_FILE_SHORT_PATH="$CLASS_NAME.cpp" #The name of the file to be created.
+MATCHING_FILES=$(find $PATH_WITHOUT_HEADER -type f -name $RELATIVE_PATH | wc -l) #Checking to see that the file inputted exists.
+
+#If there was no file inputted, exit the program. 
+if [[ $RELATIVE_PATH = "" ]] 
+then
+    echo "No File Path Provided. Exiting Program."
+    exit 
+fi
+
+#If the file was not found in the directory given, exit the program. 
+if [[ $MATCHING_FILES -lt 1 ]] 
+then
+    echo "File not found. Exiting Program."
+    exit 
+fi
 
 #Print File Path information to the terminal
 echo "Absolute Path Name: $1"                                                                
 echo "Relative Path Name: $RELATIVE_PATH"
-echo "File to be created: $OUTPUT_FILE"
+echo "File to be created: $OUTPUT_FILE_SHORT_PATH"
+echo "Class Name: $CLASS_NAME"
 
 #Variables that return a number indicating the number of matches in a grep search
 UNCLASS_SEARCH=$(grep -cw 'UNCLASSIFIED' $1) #Searching for 'unclassified' banner
@@ -30,8 +48,6 @@ then
 /*----------------------------------------------------------------------*/
 /*---------------------------- UNCLASSIFIED ----------------------------*/
 /*----------------------------------------------------------------------*/
-
-
 EOF
 
 elif [[ $CLASS_SEARCH -gt 1 ]]
@@ -40,8 +56,6 @@ then
 /*----------------------------------------------------------------------*/
 /*------------------------------ CLASSIFIED ----------------------------*/
 /*----------------------------------------------------------------------*/
-
-
 EOF
 
 elif [[ $SECRET_RD_FRD -gt 1 ]]
@@ -63,6 +77,8 @@ then
 EOF
 else 
     cat >> $OUTPUT_FILE << EOF
+
+
 /*----------------------------------------------------------------------*/
 /*----------------------------- DESCRIPTION ----------------------------*/
 /*----------------------------------------------------------------------*/
@@ -76,7 +92,6 @@ cat >> $OUTPUT_FILE << EOF
 /*----------------------------------------------------------------------*/
 /*------------------------------ INCLUDES ------------------------------*/
 /*----------------------------------------------------------------------*/
-#include <iostream>
 EOF
 
 echo "#include \"$RELATIVE_PATH\"" >> $OUTPUT_FILE
@@ -100,6 +115,18 @@ cat >> $OUTPUT_FILE << EOF
 using namespace std;
 EOF
 
+#Cut result of grep search and parse it into an array
+NAMESPACE=$(grep "class" $1 | grep "$CLASS_NAME" | grep ":" | cut -d " " -f 2 | sed "s/::/ /g" | rev |cut -d " " -f 2- | rev )
+#Use read to put the result into an array. 
+IFS=' ' read -ra usings_array <<< "$NAMESPACE"
+REVERSE_NAMESPACE=$(echo $NAMESPACE | rev)
+IFS=' ' read -ra usings_array_reverse <<< "$REVERSE_NAMESPACE"
+#Print out the namespaces to the output file with opening brackets
+for i in "${usings_array[@]}"
+do
+    echo "namespace $i {" >> $OUTPUT_FILE
+done
+
 #Add a Global Variables Banner
 cat >> $OUTPUT_FILE << EOF
 
@@ -108,7 +135,6 @@ cat >> $OUTPUT_FILE << EOF
 /*-------------------------- GLOBAL VARIABLES --------------------------*/
 /*----------------------------------------------------------------------*/
 EOF
-
 
 #Add a Constructor/Destructor banner and begin creating them both using the
 #   variable declarations from the header file.
@@ -123,29 +149,32 @@ EOF
 #Search for any parameters that may be included within the constructor definition
 CONSTRUCTOR_PARAMS=$( grep $CLASS_NAME $1 | grep "(" | grep -v "~" | grep -v "delete" | cut -d "(" -f 2 | cut -d ")" -f 1 | tr -d "\n" )
 #Get the name the class was inherited from
-INHERITED_NAME=$( grep $CLASS_NAME $1 | grep -w "class" | grep ":" | grep -v "\/\/\|\/\*"| sed "s/::/ /g" | cut -d ":" -f 2 | rev | cut -d " " -f 1 | rev | tr -d "\n" | tr -d "\r" )
+INHERITED_NAME=$( grep $CLASS_NAME $1 | grep -w "class" | grep -v "\/\/\|\/\*"| sed "s/::/ /g" | cut -d ":" -f 2 | rev | cut -d " " -f 1 | rev | tr -d "\n" | tr -d "\r" )
+echo "Inherited Name: $INHERITED_NAME"
 
 #Print out the Constructor definition to the .cpp file dependent on inheritance status
 if [[ $INHERITED_NAME = "" ]]
 then
-    echo "$CLASS_NAME::$CLASS_NAME ($CONSTRUCTOR_PARAMS) : $INHERITED_NAME () {" >> $OUTPUT_FILE
+    echo "$CLASS_NAME::$CLASS_NAME ($CONSTRUCTOR_PARAMS)," >> $OUTPUT_FILE
 else
-    echo "$CLASS_NAME::$CLASS_NAME ($CONSTRUCTOR_PARAMS) {" >> $OUTPUT_FILE
+    echo "$CLASS_NAME::$CLASS_NAME ($CONSTRUCTOR_PARAMS) : " >> $OUTPUT_FILE
+    echo "    $INHERITED_NAME()," >> $OUTPUT_FILE
 fi
 
 #Constructor Banner echoed to terminal: Used for debugging.
 ###echo "***********************CONSTRUCTOR******************************"
+#Find Ints
 #Ints Banner echoed to terminal: Used for debugging.
-####echo "--------------INTS----------------"
+###echo "--------------INTS----------------"
 
-#Get Int and Int Array Variable Names
-INT_VARIABLES=($(grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+
+INT_VARIABLES=($(grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
-INT_ARRAYS=($(grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+INT_ARRAYS=($(grep -w "int" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -w "int" $1 | sed "s/  //g" | grep "\[" | grep -v 'volatile\|unsigned\|typedef' | cut -d " " -f 2
 ###echo "Int array size: ${#INT_VARIABLES[@]}"
 
-#Print a comment line to .cpp file 
+#Print a comment line to .cpp file
 echo "    //ints" >> $OUTPUT_FILE
 
 #Initialize variables for Int and Int Arrays in .cpp file
@@ -155,7 +184,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${INT_ARRAYS[@]}"
@@ -164,7 +193,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
 
@@ -173,9 +202,9 @@ done
 ###echo "----------UNSIGNED INTS-----------"
 
 #Get Unsigned Int and Unsigned Int Arrays
-UNSIGNED_INT_VARIABLES=($(grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_INT_VARIABLES=($(grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
-UNSIGNED_INT_ARRAYS=($(grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r"))
+UNSIGNED_INT_ARRAYS=($(grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r"))
 ###grep -w "unsigned int" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3
 
 #Print a comment line to .cpp file
@@ -188,7 +217,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${UNSIGNED_INT_ARRAYS[@]}"
@@ -197,7 +226,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
 
@@ -205,11 +234,9 @@ done
 #Find Volatile Ints
 #Volatile Ints Banner printed to the terminal: Used for debugging.
 ###echo "----------VOLATILE INTS-----------"
-
-#Get Volatile Int and Volatile Int Array Variables
-VOLATILE_INT_VARIABLES=($(grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+VOLATILE_INT_VARIABLES=($(grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
-VOLATILE_INT_ARRAYS=$(grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+VOLATILE_INT_ARRAYS=$(grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" )
 ###grep -w "volatile int" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3
 
 #Print a comment line to .cpp file
@@ -222,7 +249,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${VOLATILE_INT_ARRAYS[@]}"
@@ -231,20 +258,20 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 
 
-#Find Shorts
 
+#Find Shorts
 #Shorts banner printed to terminal: used for debugging.
 ###echo "--------------SHORTS--------------"
 
 #Get Short and Short Array Variables
-SHORT_VARIABLES=($(grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+SHORT_VARIABLES=($(grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef'  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
-SHORT_ARRAYS=($(grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+SHORT_ARRAYS=($(grep -w "short" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep -w "short" $1 | sed "s/  //g" | grep "\[" | cut -d " " -f 2
 
 #Print comment line to .cpp file
@@ -257,7 +284,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${SHORT_ARRAYS[@]}"
@@ -266,19 +293,19 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
 
-#Find Unsigned Shorts
 
+#Find Unsigned Shorts
 #Unsigned Shorts Banner Printed to Terminal: Used for Debugging
 ###echo "---------UNSIGNED SHORTS----------"
 
 #Get Unsigned Short and Unsigned Short Array Variables
-UNSIGNED_SHORT_VARIABLES=($(grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_SHORT_VARIABLES=($(grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
-UNSIGNED_SHORT_ARRAYS=$(grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+UNSIGNED_SHORT_ARRAYS=$(grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" )
 ###grep -w "unsigned short" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 
 
 #Print comment line to .cpp file
@@ -291,7 +318,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${UNSIGNED_SHORT_ARRAYS[@]}"
@@ -300,22 +327,18 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
-
-
 #Find Volatile Shorts
 #Volatile Shorts Banner Printed to Terminal: Used for Debugging
 ###echo "---------VOLATILE SHORTS----------"
-
-#Get Volatile Short and Volatile Short Array Variables
-VOLATILE_SHORT_VARIABLES=($(grep -w "volatile short" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-VOLATILE_SHORT_ARRAYS=$(grep -w "volatile short" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" )
+VOLATILE_SHORT_VARIABLES=($(grep -w "volatile short" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -w "volatile short" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
 
 #Print Comment line to .cpp file
 echo "    //Volatile Shorts" >> $OUTPUT_FILE
+
 #Initialize variables for Volatile Short and Volatile Short Arrays in .cpp file
 for i in "${VOLATILE_SHORT_VARIABLES[@]}"
 do
@@ -323,16 +346,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
-    fi
-done
-for i in "${VOLATILE_SHORT_ARRAYS[@]}"
-do
-    if [[ $i = "" ]]
-    then
-        :
-    else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 
@@ -340,14 +354,13 @@ done
 #Find Longs
 #Longs Banner Printed to the Terminal: Used For Debugging.
 ###echo "--------------LONGS---------------"
-
-#Get Long and Long Array Variables
-LONG_VARIABLES=($(grep -w "long" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-LONG_ARRAYS=($(grep -w "long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+LONG_VARIABLES=($(grep -w "long" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+LONG_ARRAYS=($(grep -w "long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep -w "long" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long"  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
 
 #Print comment line to .cpp file
 echo "    //Longs" >> $OUTPUT_FILE
+
 #Initialize variables for Long and Long Arrays in .cpp file
 for i in "${LONG_VARIABLES[@]}"
 do
@@ -355,7 +368,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 for i in "${LONG_ARRAYS[@]}"
@@ -364,18 +377,16 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi
 done
 
 
-#Find Unsigned Longs
+#Find Unsigned Longs 
 #Unsigned Longs Banner Printed to Terminal: Used for Debugging 
 ###echo "----------UNSIGNED LONGS----------"
-
-#Get Unsigned Long and Unsigned Long Array Variables
-UNSIGNED_LONG_VARIABLES=($(grep -w "unsigned long" $1 | grep -v 'volatile\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-UNSIGNED_LONG_ARRAYS=($(grep -w "unsigned long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_LONG_VARIABLES=($(grep -w "unsigned long" $1 | grep -v 'volatile\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+UNSIGNED_LONG_ARRAYS=($(grep -w "unsigned long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep -w "unsigned long" $1 | grep -v 'volatile\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
 
 #Print Comment Line to .cpp File
@@ -388,7 +399,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 for i in "${UNSIGNED_LONG_ARRAYS[@]}"
@@ -397,7 +408,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi
 done
 
@@ -407,8 +418,8 @@ done
 ###echo "----------VOLATILE LONGS----------"
 
 #Get Volatile Long and Volatile Long Arrays
-VOLATILE_LONG_VARIABLES=($(grep -w "volatile long" $1 | grep -v 'typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-VOLATILE_LONG_ARRAYS=($(grep -w "volatile long" $1 | grep -v 'typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+VOLATILE_LONG_VARIABLES=($(grep -w "volatile long" $1 | grep -v 'typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+VOLATILE_LONG_ARRAYS=($(grep -w "volatile long" $1 | grep -v 'unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep -w "volatile long" $1 | grep -v 'typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
 
 #Print a Comment Line to .cpp file
@@ -420,7 +431,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 for i in "${VOLATILE_LONG_ARRAYS[@]}"
@@ -429,7 +440,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi
 done
 
@@ -439,12 +450,14 @@ done
 ###echo "-----------LONG LONGS-------------"
 
 #Get Long Long and Long Long Array Variables
-LONG_LONG_VARIABLES=($(grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-LONG_LONG_ARRAYS=($(grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+LONG_LONG_VARIABLES=($(grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+LONG_LONG_ARRAYS=($(grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep -w "long long" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = 0;/g"
+
 
 #Print Comment Line to .cpp file
 echo "    //Long Longs" >> $OUTPUT_FILE
+
 #Initialize variables for Long Long and Long Long Arrays in .cpp file
 for i in "${LONG_LONG_VARIABLES[@]}"
 do
@@ -452,7 +465,7 @@ do
     then
         :
     else
-        echo "    $i= 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi
 done
 for i in "${LONG_LONG_ARRAYS[@]}"
@@ -461,21 +474,23 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi
 done
+
 
 #Find Unsigned Long Longs
 #Unsigned long longs banner printed to terminal: Used for debugging
 ###echo "-------UNSIGNED LONG LONGS--------"
 
 #Get Unsigned Long Long and Unsigned Long Long Array variables
-UNSIGNED_LONG_LONG_VARIABLES=($(grep -w "unsigned long long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 4 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-UNSIGNED_LONG_LONG_ARRAYS=($(grep -w "unsigned long long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 4 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_LONG_LONG_VARIABLES=($(grep -w "unsigned long long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 4 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+UNSIGNED_LONG_LONG_ARRAYS=($(grep -w "unsigned long long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep -w "unsigned long long" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 4 | sed "s/;/ = 0;/g"
 
 #Print comment line to .cpp file
 echo "    //Unsigned Long Longs" >> $OUTPUT_FILE
+
 #Initialize variables for Unsigned Long Long and Unsigned Long Long Arrays in .cpp file
 for i in "${UNSIGNED_LONG_LONG_VARIABLES[@]}"
 do
@@ -483,7 +498,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${UNSIGNED_LONG_LONG_ARRAYS[@]}"
@@ -492,7 +507,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
 
@@ -500,14 +515,13 @@ done
 #Find Ulongs
 #Ulongs banner printed to terminal: Used for debugging
 ###echo "-------------ULONGS---------------"
-
-#Get Ulong and Ulong Array Variables
-ULONG_VARIABLES=($(grep -w "ulong" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-ULONG_ARRAYS=($(grep -w "ulong" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+ULONG_VARIABLES=($(grep -w "ulong" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long" | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+ULONG_ARRAYS=($(grep -w "ulong" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep -w "ulong" $1 | grep -v 'volatile\|unsigned\|typedef' | grep -v "long long"  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
 
 #Print comment line to .cpp file
 echo "    //Ulongs" >> $OUTPUT_FILE
+
 #Initialize variables for Unsigned Long Long and Unsigned Long Long Arrays in .cpp file
 for i in "${ULONG_VARIABLES[@]}"
 do
@@ -515,7 +529,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${ULONG_ARRAYS[@]}"
@@ -524,7 +538,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi 
 done
 
@@ -534,13 +548,14 @@ done
 ###echo "--------------CHARS---------------"
 
 #Get Char and Char Array Variables
-CHAR_VARIABLES=($(grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+CHAR_VARIABLES=($(grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef'  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = \'\';/g"
-CHAR_ARRAYS=($(grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r"))
+CHAR_ARRAYS=($(grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r"))
 ###grep -w "char" $1 | grep -v 'volatile\|unsigned\|typedef' |sed "s/  //g" | grep "\[" | cut -d " " -f 2
 
 #Print comment line to .cpp file
 echo "    //Chars" >> $OUTPUT_FILE
+
 #Initialize variables for Char and Char Arrays in .cpp file
 for i in "${CHAR_VARIABLES[@]}"
 do
@@ -548,7 +563,7 @@ do
     then
         :
     else
-        echo "    $i = '\0';" >> $OUTPUT_FILE 
+        echo "    $i('\0')," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${CHAR_ARRAYS[@]}"
@@ -557,7 +572,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({'\0'})," >> $OUTPUT_FILE 
     fi
 done
 
@@ -567,13 +582,15 @@ done
 ###echo "----------UNSIGNED CHARS----------"
 
 #Get Unsigned Char and Unsigned Char Array Variables
-UNSIGNED_CHAR_VARIABLES=($(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_CHAR_VARIABLES=($(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -w "unsigned char" $1 | grep -v 'volatile\|typedef'  | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 3 | sed "s/;/ = \'\';/g"
-UNSIGNED_CHAR_ARRAYS=($(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_CHAR_ARRAYS=($(grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 3 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep -w "unsigned char" $1 | grep -v 'volatile\|typedef' |sed "s/  //g" | grep "\[" | cut -d " " -f 3
+
 
 #Print Comment Line to .cpp file
 echo "    //Unsigned Chars" >> $OUTPUT_FILE
+
 #Initialize variables for Unsigned Char and Unsigned Char Arrays in .cpp file
 for i in "${UNSIGNED_CHAR_VARIABLES[@]}"
 do
@@ -581,7 +598,7 @@ do
     then
         :
     else
-        echo "    $i = '\0';" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${UNSIGNED_CHAR_ARRAYS[@]}"
@@ -590,7 +607,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi
 done
 
@@ -600,12 +617,13 @@ done
 ###echo "-------------STRINGS--------------"
 
 #Get String and String Array Variables
-STRING_VARIABLES=($(grep -w "string" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-STRING_ARRAYS=($(grep -w "string" $1 | grep -v 'typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r"))
-#grep -w "string" $1 | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = \"\";/g"
+STRING_VARIABLES=($(grep -w "string" $1 | grep -v 'typedef' | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+STRING_ARRAYS=($(grep -w "string" $1 | grep -v 'volatile\|unsigned\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r"))
+###grep -w "string" $1 | sed "s/  //g" | grep -v '(\|<' | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = \"\";/g"
 
 #Print Comment line to .cpp file
 echo "    //Strings" >> $OUTPUT_FILE
+
 #Initialize variables for String and String Arrays in .cpp file
 for i in "${STRING_VARIABLES[@]}"
 do
@@ -613,7 +631,7 @@ do
     then
         :
     else
-        echo "    $i = \"\";" >> $OUTPUT_FILE 
+        echo "    $i(\"\")," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${STRING_ARRAYS[@]}"
@@ -622,7 +640,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({\"\"})," >> $OUTPUT_FILE 
     fi 
 done
 
@@ -632,12 +650,13 @@ done
 ###echo "--------------FLOATS--------------"
 
 #Get Float and Float Array Variables from header File
-FLOAT_VARIABLES=($(grep -w "float" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-FLOAT_ARRAYS=($(grep -w "float" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r"))
+FLOAT_VARIABLES=($(grep -w "float" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+FLOAT_ARRAYS=($(grep -w "float" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r"))
 ###grep -w "float" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0.0;/g"
 
 #Print comment line in .cpp file
 echo "    //Floats" >> $OUTPUT_FILE
+
 #Initialize variables for Float and Float Arrays in .cpp file
 for i in "${FLOAT_VARIABLES[@]}"
 do
@@ -645,7 +664,7 @@ do
     then
         :
     else
-        echo "    $i = 0.0;" >> $OUTPUT_FILE 
+        echo "    $i(0.0)," >> $OUTPUT_FILE 
     fi
 done
 for i in "${FLOAT_ARRAYS[@]}"
@@ -654,7 +673,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0.0})," >> $OUTPUT_FILE 
     fi
 done
 
@@ -664,12 +683,13 @@ done
 ###echo "-------------DOUBLES--------------"
 
 #Get Double and Double Array Variables from header file
-DOUBLE_VARIABLES=($(grep -w "double" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-DOUBLE_ARRAYS=($(grep -w "double" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r"))
+DOUBLE_VARIABLES=($(grep -w "double" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+DOUBLE_ARRAYS=($(grep -w "double" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r"))
 ###grep -w "double" $1 | grep -v 'volatile\|typedef' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0.0;/g"
 
 #Print Comment line to .cpp file
 echo "    //Doubles" >> $OUTPUT_FILE
+
 #Initialize variables for Doubles and Double Arrays in .cpp file
 for i in "${DOUBLE_VARIABLES[@]}"
 do
@@ -677,7 +697,7 @@ do
     then
         :
     else
-        echo "    $i = 0.0;" >> $OUTPUT_FILE 
+        echo "    $i(0.0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${DOUBLE_ARRAYS[@]}"
@@ -686,7 +706,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0.0})," >> $OUTPUT_FILE 
     fi 
 done
 
@@ -696,9 +716,9 @@ done
 ###echo "--------------BOOLS---------------"
 
 #Get Bool and Bool array variables from header file
-BOOL_VARIABLES=($(grep "bool" $1 | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+BOOL_VARIABLES=($(grep "bool" $1 | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" )) 
 ###grep "bool" $1 | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = false;/g"
-BOOL_ARRAYS=($(grep "bool" $1 | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+BOOL_ARRAYS=($(grep "bool" $1 | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep "bool" $1 | sed "s/  //g" | grep "\[" | cut -d " " -f 2
 
 #Print Comment line to .cpp file
@@ -710,7 +730,7 @@ do
     then
         :
     else
-        echo "    $i = false;" >> $OUTPUT_FILE 
+        echo "    $i(false)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${BOOL_ARRAYS[@]}"
@@ -719,7 +739,7 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({false})," >> $OUTPUT_FILE 
     fi
 done
 
@@ -729,14 +749,15 @@ done
 ###echo "-----------UNSIGNEDS--------------"
 
 #Get Unsigned and Unsigned Variables (expicitly "Unsigned") from header file
-UNSIGNED_VARIABLES=($(grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" )) 
+UNSIGNED_VARIABLES=($(grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | tr -d ";" | tr -d "\n" | tr -d "\r" )) 
 ###grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep -v "(" | grep -v "\[" | cut -d " " -f 2 | sed "s/;/ = 0;/g"
-UNSIGNED_ARRAYS=($(grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+UNSIGNED_ARRAYS=($(grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep "\[" | cut -d " " -f 2 | tr -d ";" | cut -d "[" -f 1 | tr -d "\n" | tr -d "\r" ))
 ###grep "unsigned" $1 | grep -v 'int\|char\|bool\|short\|long' | sed "s/  //g" | grep -v "(" | grep "\[" | cut -d " " -f 2 
-###echo "Unsigned Array Size: ${#UNSIGNED_VARIABLES[@]}" #Debug for array size
+###echo "Unsigned Array Size: ${#UNSIGNED_VARIABLES[@]}"
 
-#Print comment line to .cpp file 
+#Print comment line to .cpp file
 echo "    //unsigned" >> $OUTPUT_FILE
+
 #Initialize variables for unsigned and unsigned arrays in .cpp file
 for i in "${UNSIGNED_VARIABLES[@]}"
 do
@@ -744,7 +765,7 @@ do
     then
         :
     else
-        echo "    $i = 0;" >> $OUTPUT_FILE 
+        echo "    $i(0)," >> $OUTPUT_FILE 
     fi 
 done
 for i in "${UNSIGNED_ARRAYS[@]}"
@@ -753,22 +774,23 @@ do
     then
         :
     else
-        echo "    $i;" >> $OUTPUT_FILE 
+        echo "    $i({0})," >> $OUTPUT_FILE 
     fi
 done
 
-#Pointer Variables
+#Find Pointers
 #Pointers banner printed to terminal: Used for debugging
 ###echo "-------------POINTERS--------------"
 
 #Get Pointer and Pointer array variables from header file
-POINTER_VARIABLES=($(grep -E "[A-Za-z]\*" $1 | grep -v "typedef" | sed "s/  //g" | grep -v "(" | grep -v "\[" | rev | cut -d " " -f 1 | rev | tr -d ";" | tr "\n" " " | tr -d "\r" ))
-POINTER_ARRAYS=($(grep -E "[A-Za-z]\*" $1 | grep -v "typedef" | sed "s/  //g" | grep -v "(" | grep "\[" | rev | cut -d " " -f 1 | rev | tr -d ";" | tr "\n" " " | tr -d "\r" ))
+POINTER_VARIABLES=($(grep -E "[A-Za-z]\*" $1 | grep -v "typedef" | sed "s/  //g" | grep -v "(" | grep -v "\[" | rev | cut -d " " -f 1 | rev | tr -d ";" | tr -d "\n" | tr -d "\r" ))
+POINTER_ARRAYS=($(grep -E "[A-Za-z]\*" $1 | grep -v "typedef" | sed "s/  //g" | grep -v "(" | grep "\[" | rev | cut -d " " -f 1 | rev | tr -d ";" | tr -d "\n" | tr -d "\r" ))
 ###grep -E "[A-Za-z]\*" $1 | grep -v "typedef" | sed "s/  //g" | grep -v "(" | grep -v "\[" | rev | cut -d " " -f 1 | rev | sed "s/;/ = NULL;/g" 
 ###echo "Array Length Size: ${#POINTER_VARIABLES[@]}"
 
 #Print Comment line to .cpp file
 echo "    //pointers" >> $OUTPUT_FILE
+
 #Initialize any pointers to NULL in .cpp file
 for i in "${POINTER_VARIABLES[@]}"
 do
@@ -776,7 +798,16 @@ do
     then
         :
     else
-        echo "    $i = NULL;" >> $OUTPUT_FILE 
+        echo "    $i(NULL)," >> $OUTPUT_FILE 
+    fi
+done
+for i in "${POINTER_ARRAYS[@]}"
+do
+    if [[ $i = "" ]]
+    then
+        :
+    else
+        echo "    $i({NULL})," >> $OUTPUT_FILE 
     fi
 done
 
@@ -789,6 +820,7 @@ TYPEDEF_VARIABLES=($(grep "typedef" $1 | grep -v "struct\|\/" | sed "s/  //g" | 
 
 #Print comment line to .cpp file
 echo "    //typedef" >> $OUTPUT_FILE
+
 #Initialize any typedef variables in .cpp file
 for i in "${TYPEDEF_VARIABLES[@]}"
 do
@@ -796,7 +828,6 @@ do
     then
         :
     else
-        #echo "$i"  #debug statement to show each typedef found
         SPECIFIC_TYPEDEFS=($(grep "$i" $1 | grep -v "typedef" | sed "s/  //g" | cut -d " " -f 2))
         for j in "${SPECIFIC_TYPEDEFS[@]}"
         do
@@ -804,21 +835,21 @@ do
             then
                 :
             else
-                #Print each typedef variable to the output file
-                echo -n "    $j;" >> $OUTPUT_FILE
+                echo -n "    $j" >> $OUTPUT_FILE
             fi
         done
     fi
 done
 
-#Close the Bracket out for the constructor.
-echo "}" >> $OUTPUT_FILE
+#Close the Bracket out.
+cat >> $OUTPUT_FILE << EOF
+{
+}
+EOF
 
 
 #Add a buffer line or two to the .cpp file
 cat >> $OUTPUT_FILE << EOF
-
-
 /*----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------*/
 EOF
@@ -833,16 +864,15 @@ for i in "${POINTER_VARIABLES[@]}"
 do
     if [[ $i = "" ]]
     then
-        : #do nothing
+        :
     else
-        #Add the if else statement if a pointer exists in the list of pointer variable names
         TMP_EXPR=$(echo "$i != NULL")
         echo "    if ($TMP_EXPR) { delete $i; }" >> $OUTPUT_FILE
         echo "    $i = NULL;" >> $OUTPUT_FILE 
     fi
 done
 
-#Close Destructor 
+#Close Destructor
 echo "}" >> $OUTPUT_FILE
 
 #Write Functions Banner
@@ -854,13 +884,12 @@ cat >> $OUTPUT_FILE << EOF
 /*----------------------------------------------------------------------*/
 EOF
 
-
 #Get the list of functions with their parameters
-FUNCTIONS_LIST=$(grep -wE ".*\(.*\)" $1 | grep -v "//.*\(.*\)" | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/(/ (/g" | sed "s/  (/ (/g" | sed "s/;/ {}\n\n\n$BUFFERLINE\n$BUFFERLINE/g" )
+FUNCTIONS_LIST=$(grep -wE ".*\(.*\)" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/(/ (/g" | sed "s/  (/ (/g" | sed "s/;/ {}\\n\\n${BUFFERLINE}\n${BUFFERLINE}/g" )
 #Get the Function names themselves
-FUNCTION_NAMES=($(grep -wE ".*\(.*\)" $1 | grep -vE "//.*\(.*\)" | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/unsigned //g" | sed "s/const //g" | sed "s/(/ (/g" | cut -d " " -f 2 | tr "\n" " " | tr -d "\r" ))
-# This grep is printing out to the terminal: Used for debugging
-###grep -wE ".*\(.*\)" $1 | grep -v "//.*\(.*\)" | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/(/ (/g" | sed "s/  (/ (/g" 
+FUNCTION_NAMES=($(grep -wE ".*\(.*\)" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" | sed "s/unsigned //g" | sed "s/const //g" | sed "s/(/ (/g" | cut -d " " -f 2 | tr "\n" " " | tr -d "\r" ))
+#This grep is printing out to the terminal: Used for debugging
+###grep "(" $1 | sed "s/  //g" | grep -v "~\|operator\|$CLASS_NAME\|{" 
 ###echo "Functions List Array Size: ${#FUNCTIONS_LIST[@]}"
 
 #Print out the functions to the .cpp file.
@@ -873,6 +902,7 @@ do
         echo "$i" >> $OUTPUT_FILE
     fi 
 done
+
 
 #Add the Class name in for formatting purposes
 for i in "${FUNCTION_NAMES[@]}"
@@ -891,7 +921,6 @@ EXISTING_FORMAT=$(grep -c "$CLASS_NAME::$i" $OUTPUT_FILE)
     fi
 done
 
-#Add operators banner
 cat >> $OUTPUT_FILE << EOF
 
 
@@ -920,10 +949,12 @@ cat >> $OUTPUT_FILE << EOF
 /*----------------------------------------------------------------------*/
 EOF
 
-#for i in "${usings_array_reverse[@]}"
-#do
-#    echo "} //end namespace $i" >> $OUTPUT_FILE
-#done
+#Close Namespace brackets
+for i in "${usings_array_reverse[@]}"
+do
+    echo "} //end namespace $i" >> $OUTPUT_FILE
+done
+
 
 
 #Create Footer Buffer, dependent on search results from header file.
@@ -935,8 +966,6 @@ then
 /*----------------------------------------------------------------------*/
 /*---------------------------- UNCLASSIFIED ----------------------------*/
 /*----------------------------------------------------------------------*/
-
-
 EOF
 
 elif [[ $CLASS_SEARCH -gt 1 ]]
@@ -947,8 +976,6 @@ then
 /*----------------------------------------------------------------------*/
 /*------------------------------ CLASSIFIED ----------------------------*/
 /*----------------------------------------------------------------------*/
-
-
 EOF
 
 elif [[ $SECRET_RD_FRD -gt 1 ]]
@@ -962,4 +989,4 @@ then
 EOF
 fi
 
-echo "File successfully Created. Exiting Program."
+echo "Sucessfully created file. Exiting program."
