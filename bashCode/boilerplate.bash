@@ -1,8 +1,18 @@
 #!/bin/bash
 
+# ************************************************************UNCLASSIFIED************************************************************
+#  Company: Northrop Grumman 
+#  
+#  Purpose: Cleaning up hpp files. Making it look neat without having to go and chang line by line
+#  Instruction: ./<scriptName>.sh <Inputfile> <Outputfile> 
+#
+#  Check4Runtime: time <scriptName>.sh <Inputfile> <Outputfile2>
+# ************************************************************UNCLASSIFIED************************************************************
+
 #### BOILERPLATE.BASH ####
 ## This Bash Script creates an automatic boilerplate for files. ##
 #PARAMETERS: $1: The absolute file path
+
 
 RELATIVE_PATH=($(echo $1 | rev | cut -d "/" -f 1 | rev )) #Relative Path stored here
 PATH_WITHOUT_HEADER=($(echo $1 | rev | cut -d "/" -f 2- | rev )) #Relative Path stored here
@@ -990,3 +1000,5 @@ EOF
 fi
 
 echo "Sucessfully created file. Exiting program."
+
+# ************************************************************UNCLASSIFIED************************************************************
