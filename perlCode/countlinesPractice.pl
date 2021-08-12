@@ -2,6 +2,7 @@
 # countlines.pl
 
 use 5.18.0;
+use strict;
 use warnings;
 
 my $filename = "linesfile.txt";
